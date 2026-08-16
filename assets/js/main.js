@@ -26,6 +26,8 @@
   if (toggle && nav) {
     const setNav = (open) => {
       nav.classList.toggle('open', open);
+      // 開いている間はヘッダーも不透過にする（後ろの写真が透けないように）
+      if (header) header.classList.toggle('nav-open', open);
       toggle.setAttribute('aria-expanded', String(open));
       toggle.setAttribute('aria-label', open ? 'メニューを閉じる' : 'メニューを開く');
     };

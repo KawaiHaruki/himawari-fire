@@ -129,12 +129,30 @@ code {
   transition: background .3s, padding .3s, border-color .3s;
   border-bottom: 1px solid transparent;
 }
+/* ヒーローの写真の上でもロゴとメニューが読めるよう、上端に暗い膜を敷いています */
+.site-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(rgba(11, 9, 8, .8), rgba(11, 9, 8, 0));
+  pointer-events: none;
+  transition: opacity .3s;
+}
 .site-header.scrolled {
   padding: .55rem 0;
-  background: rgba(11, 9, 8, .9);
+  background: rgba(11, 9, 8, .96);
   backdrop-filter: blur(14px);
   border-bottom-color: var(--line);
 }
+.site-header.scrolled::before { opacity: 0; }
+
+/* メニューを開いている間はヘッダーも透けさせない */
+.site-header.nav-open {
+  background: var(--sumi);
+  border-bottom-color: var(--line);
+}
+.site-header.nav-open::before { opacity: 0; }
 
 .header-inner {
   display: flex;
@@ -197,8 +215,11 @@ code {
 }
 .nav-cta:hover { background: var(--hi); color: #fff !important; }
 
-/* ハンバーガー（スマホのみ） */
+/* ハンバーガー（スマホのみ）
+   開いたメニューより手前に置いて、閉じる × が隠れないようにしています */
 .nav-toggle {
+  position: relative;
+  z-index: 2;
   display: none;
   flex-direction: column;
   justify-content: center;
@@ -206,10 +227,12 @@ code {
   width: 44px;
   height: 44px;
   padding: 0;
-  background: none;
-  border: 0;
+  background: var(--sumi);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   cursor: pointer;
 }
+.nav-toggle[aria-expanded="true"] { border-color: var(--hi); }
 .nav-toggle span {
   display: block;
   width: 24px;
@@ -226,6 +249,7 @@ code {
 
 .hero {
   position: relative;
+  isolation: isolate;
   min-height: 100svh;
   display: flex;
   align-items: center;
@@ -233,9 +257,40 @@ code {
   overflow: hidden;
 }
 
+/* 背景写真。上に暗いグラデーションを重ねて、文字が読める明るさに落としています。
+   写真を差し替えたら object-position で見せたい位置を調整してください。 */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+.hero-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 62% center;
+}
+.hero-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right,
+      rgba(11, 9, 8, .93) 0%,
+      rgba(11, 9, 8, .84) 34%,
+      rgba(11, 9, 8, .42) 68%,
+      rgba(11, 9, 8, .54) 100%),
+    linear-gradient(to bottom,
+      rgba(11, 9, 8, .78) 0%,
+      rgba(11, 9, 8, .14) 26%,
+      rgba(11, 9, 8, .24) 60%,
+      rgba(11, 9, 8, .97) 100%);
+}
+
 .hero-glow {
   position: absolute;
   inset: 0;
+  z-index: -1;
   background:
     radial-gradient(ellipse 60% 50% at 78% 55%, rgba(217, 72, 42, .20), transparent 72%),
     radial-gradient(ellipse 80% 45% at 20% 100%, rgba(232, 118, 58, .12), transparent 70%);
@@ -272,7 +327,7 @@ code {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(0, 340px);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: clamp(1.5rem, 4vw, 3.5rem);
 }
@@ -299,7 +354,7 @@ code {
   background: linear-gradient(var(--hi), transparent);
 }
 
-.hero-copy { min-width: 0; }
+.hero-copy { min-width: 0; max-width: 46rem; }
 
 .hero-eyebrow {
   margin: 0 0 1.4rem;
@@ -315,13 +370,17 @@ code {
   line-height: 1.35;
   letter-spacing: .06em;
   margin-bottom: 1.6rem;
+  text-shadow: 0 2px 18px rgba(11, 9, 8, .85);
 }
 
+/* 折り返しは画面幅まかせ。em 指定なので、狭い画面では自然に幅いっぱいまで使います */
 .hero-lead {
-  max-width: 40ch;
-  color: var(--text-muted);
+  max-width: min(100%, 34em);
+  color: var(--text);
   font-size: clamp(.94rem, 1.4vw, 1rem);
   margin-bottom: 2.4rem;
+  text-wrap: pretty;
+  text-shadow: 0 1px 14px rgba(11, 9, 8, .9);
 }
 
 .hero-actions {
@@ -347,21 +406,6 @@ code {
   color: var(--hi-amber);
   font-size: .74rem;
   letter-spacing: .16em;
-}
-
-/* 2:3 に切り抜いて、動画サムネの文字が入らない左側だけを見せています */
-.hero-photo {
-  margin: 0;
-  aspect-ratio: 2 / 3;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-.hero-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 0% center;
 }
 
 .scroll-hint {
@@ -538,11 +582,38 @@ code {
 .prop:hover .prop-icon { color: var(--text); }
 
 .prop h3 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .75rem;
   font-size: 1.2rem;
   letter-spacing: .14em;
   margin-bottom: .9rem;
 }
+.prop-en {
+  color: var(--hi-amber);
+  font-family: var(--sans);
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .28em;
+}
 .prop p { margin: 0; color: var(--text-muted); font-size: .9rem; }
+
+/* 「その他多数」だけは横幅いっぱいの帯にして、3 つの道具と区別しています */
+.prop-more {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.8rem;
+}
+.prop-more .prop-icon {
+  flex-shrink: 0;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 0;
+}
+.prop-more-body { min-width: 0; }
+.prop-more p { max-width: 68ch; }
 
 /* --- 映像 -------------------------------------------------------------- */
 
@@ -838,6 +909,26 @@ code {
   background: var(--hi);
 }
 
+/* 予算についてのひとこと（依頼をためらわせないための注記） */
+.budget-note {
+  margin: 0 0 1.4rem;
+  padding: 1.1rem 1.3rem;
+  background: rgba(217, 72, 42, .08);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--hi);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: .87rem;
+}
+.budget-note strong {
+  display: block;
+  margin-bottom: .35rem;
+  color: var(--text);
+  font-family: var(--serif);
+  font-size: 1rem;
+  letter-spacing: .06em;
+}
+
 .note {
   margin: 0;
   color: var(--text-muted);
@@ -980,16 +1071,28 @@ code {
 /* --- レスポンシブ ------------------------------------------------------ */
 
 @media (max-width: 1000px) {
-  .hero-inner { grid-template-columns: auto minmax(0, 1fr) minmax(0, 260px); }
   .about-grid { grid-template-columns: 1fr; }
   .about-card { max-width: 460px; }
 }
 
+@media (max-width: 900px) {
+  .prop-more { flex-direction: column; align-items: flex-start; gap: 1.2rem; }
+}
+
 @media (max-width: 820px) {
-  .hero { min-height: 0; padding: 7.5rem 0 5rem; }
+  .hero { min-height: 92svh; padding: 7.5rem 0 5rem; }
   .hero-inner { grid-template-columns: 1fr; gap: 2.5rem; }
   .hero-vertical { display: none; }
-  .hero-photo { aspect-ratio: 3 / 4; max-width: 420px; }
+  /* 縦長の画面では、人物が写っている中央寄りを見せます */
+  .hero-bg img { object-position: 44% center; }
+  .hero-bg::after {
+    background:
+      linear-gradient(to bottom,
+        rgba(11, 9, 8, .84) 0%,
+        rgba(11, 9, 8, .42) 20%,
+        rgba(11, 9, 8, .62) 50%,
+        rgba(11, 9, 8, .97) 100%);
+  }
   .scroll-hint { display: none; }
 
   .timeline li { grid-template-columns: 1fr; gap: .6rem; }
@@ -1000,12 +1103,15 @@ code {
 @media (max-width: 768px) {
   .nav-toggle { display: flex; }
 
+  /* 背景は不透過。後ろの写真や本文が透けないようにしています */
   .nav {
     position: fixed;
     inset: 0 0 0 auto;
+    z-index: 1;
     width: min(80vw, 320px);
     padding: 6rem 2rem 2rem;
     background: var(--sumi-alt);
+    box-shadow: -22px 0 46px rgba(0, 0, 0, .55);
     border-left: 1px solid var(--line);
     transform: translateX(100%);
     transition: transform .35s ease;
