@@ -139,10 +139,13 @@ code {
   pointer-events: none;
   transition: opacity .3s;
 }
+/* ここで backdrop-filter は使いません。
+   backdrop-filter を付けた要素は、その中の position: fixed の基準（包含ブロック）に
+   なってしまうため、中に入れているメニュー（.nav）の高さがヘッダーの高さまで縮み、
+   下から本文が透けて見えてしまいます。 */
 .site-header.scrolled {
   padding: .55rem 0;
-  background: rgba(11, 9, 8, .96);
-  backdrop-filter: blur(14px);
+  background: var(--sumi);
   border-bottom-color: var(--line);
 }
 .site-header.scrolled::before { opacity: 0; }
