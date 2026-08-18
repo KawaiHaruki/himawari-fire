@@ -66,9 +66,14 @@
       const id = facade.dataset.video;
       if (!id) return;
 
+      /* data-start に秒数を書いておくと、その位置から再生できます */
+      const start = parseInt(facade.dataset.start, 10);
+
       const iframe = document.createElement('iframe');
       iframe.src = 'https://www.youtube-nocookie.com/embed/' + id +
-                   '?autoplay=1&rel=0&modestbranding=1';
+                   '?autoplay=1&rel=0&modestbranding=1' +
+                   (start > 0 ? '&start=' + start : '');
+      iframe.className = 'yt-player';
       iframe.title = facade.dataset.title || 'YouTube の動画';
       iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; ' +
                      'gyroscope; picture-in-picture; web-share';
