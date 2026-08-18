@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# CSS・JS の中身から ?v= を作り直し、HTML を一緒にコミットに含めます。
+# （中身が変わっていなければ HTML も変わらないので、空振りしても害はありません）
+set -euo pipefail
+
+./tools/stamp-assets.sh >/dev/null
+
+# HTML の ?v= が書き換わったときだけステージに追加します
+for f in index.html 404.html; do
+  git diff --quiet -- "$f" || git add "$f"
+done
