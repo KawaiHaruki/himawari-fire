@@ -3,7 +3,7 @@
 ファイヤーパフォーマンス団体「火廻」のホームページ。
 ビルド不要の素の HTML / CSS / JavaScript で作っています。
 
-公開URL: https://kawaiharuki.github.io/himawari-fire/
+公開URL: https://himawari-fire.com/
 
 ## ファイル構成
 
@@ -53,18 +53,25 @@ python3 -m http.server 8000
 
 ## 公開する
 
-`main` ブランチに push すると、1〜2分で自動的に反映されます。
+サイトは AWS（S3 + CloudFront）から配信しています。
+配信の構成は隣の [`himawari-fire-aws`](../himawari-fire-aws) にあり、公開もそこから行います。
 
 ```bash
 git add -A
 git commit -m "サイトを更新"
-git push
+git push                       # GitHub のリポジトリを更新する
+
+cd ../himawari-fire-aws
+npx cdk deploy --all           # 公開サイトへ反映する
 ```
+
+アップロードと CloudFront のキャッシュ削除までまとめて行われ、数十秒で反映されます。
+**push しただけでは公開サイトは変わりません。**
 
 ### キャッシュ対策（自動）
 
-GitHub Pages はすべてのファイルに `Cache-Control: max-age=600`（10 分）を返します。
-この値はこちらから変更できません。放っておくと CSS や JS を更新した直後に、
+CSS・JS・画像は、閲覧者のブラウザに最大 1 日残ります。
+放っておくと CSS や JS を更新した直後に、
 閲覧者のブラウザが古い CSS のまま新しい HTML を表示してしまうことがあります。
 
 そこで、HTML から CSS・JS を読み込む URL に `?v=中身のハッシュ` を付けています。
@@ -88,9 +95,9 @@ git config core.hooksPath .githooks
 
 手動で打ち直したいときは `./tools/stamp-assets.sh` を実行します。
 
-なお HTML そのものと画像は、最大 10 分の遅れで自動的に新しいものに入れ替わります。
-画像を差し替えるときは、同じファイル名を使い回さず新しい名前を付けると、
-この 10 分の遅れもなくすぐに反映されます。
+なお HTML は毎回サーバーに確認しに行く設定なので、deploy した直後から新しいものが出ます。
+画像はファイル名がそのままなので、ブラウザに最大 1 日残ります。
+差し替えるときは、同じファイル名を使い回さず新しい名前を付けると、この遅れもなくなります。
 
 ## 更新のしかた
 
@@ -167,16 +174,17 @@ Google Fonts から読み込んでいます。変えるときは `index.html` �
 - [ ] 出演依頼の条件（必要な広さ・所要時間・費用の目安・雨天時の対応）
 - [ ] 撮り下ろしの写真（文字が入っていないもの）
 - [ ] OGP 画像 `assets/img/ogp.jpg` を専用に作る（推奨 1200×630px）
-- [ ] 独自ドメイン（使う場合）
 
 ## お問い合わせフォームについて
 
-GitHub Pages は静的ホスティングのため、サーバー側の処理ができません。
+このサイトは静的ホスティングのため、サーバー側の処理ができません。
 フォームが必要な場合は Google フォーム / Formspree / Tally などを埋め込んでください。
 現在はメールリンクと SNS リンクのみ設置しています。
 
-## 独自ドメインを使う場合
+## ドメインと配信について
 
-1. リポジトリ直下に `CNAME` ファイルを作り、ドメイン名だけを書く
-2. DNS 側で GitHub Pages 向けのレコードを設定する
-3. リポジトリの Settings → Pages でドメインを登録し、HTTPS を有効化
+`himawari-fire.com` は Route53 で管理し、CloudFront から HTTPS で配信しています。
+`www.himawari-fire.com` で来たアクセスは `himawari-fire.com` へ 301 で寄せています。
+
+DNS・証明書・配信の設定はすべて [`himawari-fire-aws`](../himawari-fire-aws) の
+CDK コードにあります。AWS のコンソールから直接いじると、次の deploy で戻ります。
